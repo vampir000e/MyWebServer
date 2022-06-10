@@ -227,3 +227,25 @@ http_conn::HTTP_CODE http_conn:: parse_request_line(char *text) {
         m_url = strchr(m_url, '/');
     }
 
+    if (!m_url || m_url[0] != '/') return BAD_REQUEST;
+    // 当url为/时，显示判断界面
+    if (strlen(m_url) == 1) strcat(m_url, "judge.html");
+    m_check_state = CHECK_STATE_HEADER;
+    return NO_REQUEST;
+}
+
+// 解析http请求的一个头部信息
+http_conn::HTTP_CODE http_conn::parse_headers(char *text) {
+    if (text[0] == '\0') {
+        if (m_content_length != 0) {
+            m_check_state = CHECK_STATE_CONTENT;
+            return NO_REQUEST;
+        }
+        return GET_REQUEST;
+    } else if (strncasecmp(text, "Connection:", 11) == 0) {
+        text += 11;
+        text += strspn(text, "\t");
+        if (strcasecmp(text, "keep-alive") == 0) m_linger = true;
+    } else if (strncasecmp(text, "Content-length:", 15) == 0) {
+        text += 15;
+
