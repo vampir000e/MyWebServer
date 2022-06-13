@@ -30,11 +30,11 @@ int main(int argc, char *argv[]) {
     memset(&serv_adr, 0, sizeof(serv_adr));
     serv_adr.sin_family = AF_INET;
     serv_adr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(atoi(argv[1]));
+    serv_adr.sin_port = htons(atoi(argv[1]));
 
     if (bind(serv_sock, (struct sockaddr*) &serv_adr, sizeof(serv_adr)) == -1)
         error_handling("bind() errror");
-    if (listen(serv_sock(), 5) == -1)
+    if (listen(serv_sock, 5) == -1)
         error_handling("listen() error");
 
     FD_ZERO(&reads);
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-vold error_handling(char *buf) {
+void error_handling(char *buf) {
     fputs(buf, stderr);
     fputc('\n', stderr);
     exit(1);
