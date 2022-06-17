@@ -61,16 +61,25 @@ void WebServer::log_write() {
     if (0 == m_close_log) {
         if (1 == m_log_write) Log::get_instance()->init("./ServerLog", m_close_log, 2000, 800000, 800);
         else Log::get_instance()->init("./ServerLog", m_close_log, 2000, 800000, 0);
+    }
 }
 
 void WebServer::sql_pool() {
+    // 初始化数据库连接池
     m_connPool = connection_pool::GetInstance();
     m_connPool->init("localhost", m_user, m_passWord, m_databaseName, 3306, m_sql_num, m_close_log);
-
+    
+    // 初始化数据库读取表
     users->initmysql_result(m_connpool);
 }
 
+void WebServer::thread_pool() {
+    // 线程池
+    m_pool = new threadpool<http_conn>(m_actormodel, m_connPool, m_thread_num);
+}
+
 void WebServer::eventListen() {
+    // 网络编程基础步骤
     m_listenfd = socket(PF_INET, SOCK_STREAM, 0);
     assert(m_listenfd >= 0);
 
@@ -117,7 +126,8 @@ void WebServer::eventListen() {
     utils.addsig(SIGTERM, utils.sig_handler, false);
 
     alarm(TIMESLOT);
-
+    
+    // 工具类，信号和描述符基础操作
     Utils::u_pipefd = m_pipefd;
     Utils::u_epollfd = m_epollfd;
 }
@@ -149,13 +159,6 @@ void WebServer::adjust_timer(util_timer *timer) {
 }
 
 void WebServer::deal_timer(util_timer *timer, int sockfd) {
-    timer->cb_func(&users_timer[sockfd]);
-    if (timer) utils.m_timer_lst.del_timer(timer);
-
-    LOG_INFO("close fd %d", users_timer[sockfd].sockfd);
-}
-
-bool WebServer::dealclinedata() {
     timer->cb_func(&users_timer[sockfd]);
     if (timer) utils.m_timer_lst.del_timer(timer);
 
