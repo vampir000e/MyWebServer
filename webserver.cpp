@@ -80,6 +80,8 @@ void WebServer::thread_pool() {
 
 void WebServer::eventListen() {
     // 网络编程基础步骤
+    /* 创建socket
+    /* 协议族：PF_INET, IPv4; 服务类型：SOCK_STREAM, 针对TCP/IP协议; */
     m_listenfd = socket(PF_INET, SOCK_STREAM, 0);
     assert(m_listenfd >= 0);
 
@@ -92,6 +94,7 @@ void WebServer::eventListen() {
         setsockopt(m+listenfd, SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));
     }
 
+    /* 转网络字节序 */
     int ret = 0;
     struct sockaddr_in address;
     bzero(&address, sizeof(address));
@@ -99,10 +102,13 @@ void WebServer::eventListen() {
     address.sin_addr.s_addr = htonl(INADDR_ANY);
     address.sin_port = htons(m_port);
 
+    /* 命名socket */
     int flag = 1;
     setsockopt(m_listenfd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
     ret = bind(m_listenfd,(struct sockaddr *)&address, sizeof(address));
     assert(ret >= 0);
+    
+    /* 监听socket */
     ret = listen(m_listenfd, 5);
     assert(ret >= 0);
 
@@ -319,8 +325,10 @@ void WebServer::eventLoop() {
                 if (false == flag) LOG_ERROR("%s", "dealclientdata failure");
             }
             // 处理客户连接上接收到的数据
-            else if (events[i].events & EPOLLIN) dealwithread(sockfd);
-            else if (events[i].events & EPOLLOUT) dealwithwrite(sockfd);
+            else if (events[i].events & EPOLLIN) 
+                dealwithread(sockfd);
+            else if (events[i].events & EPOLLOUT) 
+                dealwithwrite(sockfd);
         }
         if (timeout) {
             utils.timer_handler();
