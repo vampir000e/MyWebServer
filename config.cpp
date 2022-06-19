@@ -13,7 +13,7 @@ Config::Config() {
     actor_model = 0;
 }
 
-void Config::parse_arg(int argc, char **argv[]) {
+void Config::parse_arg(int argc, char *argv[]) {
     int opt;
     const char *str = "p:l:m:o:s:t:c:a";
 

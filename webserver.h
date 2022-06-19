@@ -6,7 +6,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <erroro.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <cassert>

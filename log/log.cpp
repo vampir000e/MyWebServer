@@ -97,8 +97,8 @@ void Log::write_log(int level, const char *format, ...) {
 
         snprintf(tail, 16, "%d_%02d_%02d_", my_tm.tm_year + 1900, my_tm.tm_mon + 1, my_tm.tm_mday);
 
-        if (m_today != my_tm.mday) {
-            snprintf(new_log, 255, "%s%s%s", dirname, tail, log_name);
+        if (m_today != my_tm.tm_mday) {
+            snprintf(new_log, 255, "%s%s%s", dir_name, tail, log_name);
             m_today = my_tm.tm_mday;
             m_count = 0;
         } else {

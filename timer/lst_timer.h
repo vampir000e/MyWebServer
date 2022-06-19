@@ -7,7 +7,7 @@
 #include <sys/epoll.h>
 #include <fcntl.h>
 #include <sys/socket.h>
-#include <netinet.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <assert.h>
 #include <sys/stat.h>

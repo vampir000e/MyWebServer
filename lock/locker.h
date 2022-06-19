@@ -48,7 +48,7 @@ public:
 
 private:
     pthread_mutex_t m_mutex;
-}
+};
 
 class cond {
 public:
@@ -60,14 +60,14 @@ public:
     ~cond() {
         pthread_cond_destroy(&m_cond);
     }
-    bool wait(pthread_mutex_t, *m_mutex) {
+    bool wait(pthread_mutex_t *m_mutex) {
         int ret = 0;
         ret = pthread_cond_wait(&m_cond, m_mutex);
         return ret == 0;
     }
     bool timewait(pthread_mutex_t *mutex, struct timespec t) {
         int ret = 0;
-        ret = pthread_cond_timewait(&m_cond, m_mutex, &t);
+        ret = pthread_cond_timedwait(&m_cond, m_mutex, &t);
         return ret == 0;
     }
     bool signal() {
