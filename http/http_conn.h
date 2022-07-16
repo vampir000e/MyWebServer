@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <sys/epoll.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -78,7 +79,7 @@ public:
     int improv;
 private:
     void init();
-    HTTP_CODE precess_read();
+    HTTP_CODE process_read();
     bool process_write(HTTP_CODE ret);
     HTTP_CODE parse_request_line(char *text);
     HTTP_CODE parse_headers(char *text);
@@ -128,7 +129,7 @@ private:
     char *doc_root;
 
     map<string, string> m_users;
-    int m_TRIGModed;
+    int m_TRIGMode;
     int m_close_log;
 
     char sql_user[100];

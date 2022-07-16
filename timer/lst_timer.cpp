@@ -37,10 +37,10 @@ void sort_timer_lst::adjust_timer(util_timer *timer) {
     if (!tmp || (timer->expire < tmp->expire)) return;
 
     if (timer == head) {
-        head = head->prev;
+        head = head->next;
         head->prev = NULL;
         timer->next = NULL;
-        add_timer(tiemr, add);
+        add_timer(timer, head);
     } else {
         timer->prev->next = timer->next;
         timer->next->prev = timer->prev;
@@ -53,7 +53,7 @@ void sort_timer_lst::del_timer(util_timer *timer) {
     if ((timer == head) && (timer == tail)) {
         delete timer;
         head = NULL;
-        tail = NULL:
+        tail = NULL;
         return;
     }
     if (timer == head) {
@@ -62,6 +62,13 @@ void sort_timer_lst::del_timer(util_timer *timer) {
         delete timer;
         return;
     }
+    if (timer == tail) {
+        tail = tail->prev;
+        tail->next = NULL;
+        delete timer;
+        return;
+    }
+
     timer->prev->next = timer->next;
     timer->next->prev = timer->prev;
     delete timer;
@@ -108,12 +115,12 @@ void sort_timer_lst::add_timer(util_timer *timer, util_timer *lst_head) {
 
 
 void Utils::init(int timeslot) {
-    m_TIMESLOT = timslot;
+    m_TIMESLOT = timeslot;
 }
 
 // 对文件描述符设置非阻塞
 int Utils::setnonblocking(int fd) {
-    int old_option = fgntl(fd, F_GETFL);
+    int old_option = fcntl(fd, F_GETFL);
     int new_option = old_option | O_NONBLOCK;
     fcntl(fd, F_SETFL, new_option);
     return old_option;
@@ -127,7 +134,7 @@ void Utils::addfd(int epollfd, int fd, bool one_shot, int TRIGMode) {
     if (1 == TRIGMode) 
         event.events  = EPOLLIN | EPOLLET | EPOLLRDHUP;
     else 
-        event.events = EPOLLIN | EPLLRDHUP;
+        event.events = EPOLLIN | EPOLLRDHUP;
 
     if (one_shot)
         event.events |= EPOLLONESHOT;
@@ -148,11 +155,11 @@ void Utils::sig_handler(int sig) {
 void Utils::addsig(int sig, void(handler)(int), bool restart) {
     struct sigaction sa;
     memset(&sa, '\0', sizeof(sa));
-    sa.sa_handler -= handler;
+    sa.sa_handler = handler;
     if (restart)
         sa.sa_flags |= SA_RESTART;
     sigfillset(&sa.sa_mask);
-    assert(sigaction(sig, &sa, NULL) != -1)
+    assert(sigaction(sig, &sa, NULL) != -1);
 }
 
 

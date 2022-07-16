@@ -23,7 +23,7 @@ public:
     // 单例模式
     static connection_pool *GetInstance();
 
-    void int(string url, string User, string PassWord, string DataBaseName, int Port, int MaxConn, int close_log);
+    void init(string url, string User, string PassWord, string DataBaseName, int Port, int MaxConn, int close_log);
 
 private:
     connection_pool();
@@ -39,6 +39,7 @@ private:
 public:
     string m_url;           // 主机地址
     string m_Port;          // 数据库端口号
+    string m_User;          // 登录数据库用户名
     string m_PassWord;      // 登录数据库密码
     string m_DatabaseName;  // 使用数据库名
     int m_close_log;        // 日志开关
@@ -46,7 +47,7 @@ public:
 
 class connectionRAII {
 public:
-    connectionRAII(MYSQL,**con, connection_pool *connPool);
+    connectionRAII(MYSQL **con, connection_pool *connPool);
     ~connectionRAII();
 
 private:

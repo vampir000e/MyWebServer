@@ -84,7 +84,7 @@ bool connection_pool::ReleaseConnection(MYSQL *con) {
     
     lock.unlock();
 
-    reserver.post();
+    reserve.post();
     return true;
 }
 
@@ -126,5 +126,5 @@ connectionRAII::connectionRAII(MYSQL **SQL, connection_pool *connPool) {
 }
 
 connectionRAII::~connectionRAII() {
-    poolRAII->ReleaseConnection(connRAII);
+    poolRAII->ReleaseConnection(conRAII);
 }

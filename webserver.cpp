@@ -21,12 +21,12 @@ WebServer::~WebServer() {
     close(m_listenfd);
     close(m_pipefd[1]);
     close(m_pipefd[0]);
-    delete []users;
-    delete []users_timer;
+    delete[] users;
+    delete[] users_timer;
     delete m_pool;
 }
 
-void Webser::init(int port, string user, string passWord, string databaseName, int log_write,
+void WebServer::init(int port, string user, string passWord, string databaseName, int log_write,
         int opt_linger, int trigmode, int sql_num, int thread_num, int close_log, int actor_model) {
     m_port = port;
     m_user = user;
@@ -70,7 +70,7 @@ void WebServer::sql_pool() {
     m_connPool->init("localhost", m_user, m_passWord, m_databaseName, 3306, m_sql_num, m_close_log);
     
     // 初始化数据库读取表
-    users->initmysql_result(m_connpool);
+    users->initmysql_result(m_connPool);
 }
 
 void WebServer::thread_pool() {
@@ -91,7 +91,7 @@ void WebServer::eventListen() {
         setsockopt(m_listenfd, SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));
     } else if (1 == m_OPT_LINGER) {
         struct linger tmp = {1, 1};
-        setsockopt(m+listenfd, SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));
+        setsockopt(m_listenfd, SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));
     }
 
     /* 转网络字节序 */
@@ -124,7 +124,7 @@ void WebServer::eventListen() {
 
     ret = socketpair(PF_UNIX, SOCK_STREAM, 0, m_pipefd);
     assert(ret != -1);
-    utils.setnonblocking(m_pipiefd[1]);
+    utils.setnonblocking(m_pipefd[1]);
     utils.addfd(m_epollfd, m_pipefd[0], false, 0);
 
     utils.addsig(SIGPIPE, SIG_IGN);
@@ -171,7 +171,7 @@ void WebServer::deal_timer(util_timer *timer, int sockfd) {
     LOG_INFO("close fd %d", users_timer[sockfd].sockfd);
 }
 
-bool WebServer::dealclinedata() {
+bool WebServer::dealclientdata() {
     struct sockaddr_in client_address;
     socklen_t client_addrlength = sizeof(client_address);
     if (0 == m_LISTENTrigmode) {
@@ -182,7 +182,7 @@ bool WebServer::dealclinedata() {
         }
         if (http_conn::m_user_count >= MAX_FD) {
             utils.show_error(connfd, "Internal server busy");
-            LOG_INFO("%s", "Internal server busy");
+            LOG_ERROR("%s", "Internal server busy");
             return false;
         }
         timer(connfd, client_address);
@@ -207,7 +207,7 @@ bool WebServer::dealclinedata() {
 
 bool WebServer::dealwithsignal(bool &timeout, bool &stop_server) {
     int ret = 0;
-    itn sig;
+    int sig;
     char signals[1024];
     ret = recv(m_pipefd[0], signals, sizeof(signals), 0);
     if (ret == -1) {
@@ -224,7 +224,7 @@ bool WebServer::dealwithsignal(bool &timeout, bool &stop_server) {
                     }
                 case SIGTERM:
                     {
-                        stop+server = true;
+                        stop_server = true;
                         break;
                     }
             }
@@ -234,22 +234,24 @@ bool WebServer::dealwithsignal(bool &timeout, bool &stop_server) {
 }
 
 void WebServer::dealwithread(int sockfd) {
-    utils_timer *timer = users_timer[sockfd].timer;
+    util_timer *timer = users_timer[sockfd].timer;
     
     // reactor
-    if (timer) adjust_timer(timer);
+    if (1 == m_actormodel) {
+        if (timer) adjust_timer(timer);
 
-    // 若监测到读事件，将该事件放入请求队列
-    m_pool->appenf(users + sockfd, 0);
+        // 若监测到读事件，将该事件放入请求队列
+        m_pool->append(users + sockfd, 0);
 
-    while (true) {
-        if (1 == users[sockfd].improv) {
-            if (1 == users[sockfd].timer_flag) {
-                deal_timer(timer, sockfd);
-                users[sockfd].timer_flag = 0;
+        while (true) {
+            if (1 == users[sockfd].improv) {
+                if (1 == users[sockfd].timer_flag) {
+                    deal_timer(timer, sockfd);
+                    users[sockfd].timer_flag = 0;
+                }
+                users[sockfd].improv = 0;
+                break;
             }
-            users[sockfd].improv = 0;
-            break;
         }
     } else {
         // proactor
@@ -301,7 +303,7 @@ void WebServer::eventLoop() {
     bool stop_server = false;
 
     while (!stop_server) {
-        int number = epoll_wait(m_epollfd, MAX_EVENT_NUMBER, -1);
+        int number = epoll_wait(m_epollfd, events, MAX_EVENT_NUMBER, -1);
         if (number < 0 && errno != EINTR) {
             LOG_ERROR("%s", "epoll failure");
             break;

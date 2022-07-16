@@ -10,7 +10,7 @@ const char *error_400_form = "Your request had bad syntax or is inherently impos
 const char *error_403_title = "Forbidden";
 const char *error_403_form = "You do not have permission to get file form this server. \n";
 const char *error_404_title = "Not Found";
-const char *error_404_form = "The requested file was not found on this server. \n"
+const char *error_404_form = "The requested file was not found on this server. \n";
 const char *error_500_title = "Internal Error";
 const char *error_500_form = "There was an unusual problem serving the request file. \n";
 
@@ -46,8 +46,8 @@ void http_conn::initmysql_result(connection_pool *connPool) {
 
 // 对文件描述符设置非阻塞
 int setnonblocking(int fd) {
-    int old_option = fcnt1(fd, F_GETFL);
-    int new_option = old_optiom | O_NONBLOCK;
+    int old_option = fcntl(fd, F_GETFL);
+    int new_option = old_option | O_NONBLOCK;
     fcnt1(fd, F_SETFL, new_option);
     return old_option;
 }
@@ -79,7 +79,7 @@ void modfd(int epollfd, int fd, int ev, int TRIGMode) {
     if (1 == TRIGMode) event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLRDHUP;
     else event.events = ev | EPOLLONESHOT | EPOLLRDHUP;
     
-    epoll_cnl(epollfd, EPOLL_CTL_MOD, fd, &event);
+    epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
 }
 
 int http_conn::m_user_count = 0;
@@ -102,7 +102,7 @@ void http_conn::init(int sockfd, const sockaddr_in &addr, char *root, int TRIGMo
     m_address = addr;
 
     addfd(m_epollfd, sockfd, true, m_TRIGMode);
-    m_user_conn_count++;
+    m_user_count++;
 
     // 当浏览器出现连接重置时，可能是网站根目录出错或http响应格式出错或者访问的文件中内容完全为空
     doc_root = root;
@@ -139,8 +139,8 @@ void http_conn::init() {
     improv = 0;
 
     memset(m_read_buf, '\0', READ_BUFFER_SIZE);
-    memset(m_write_buf, '\0\, WRITE_BUFFER_SIZE);
-    memset(m_real_file, '\0\, FILENAME_LEN);
+    memset(m_write_buf, '\0', WRITE_BUFFER_SIZE);
+    memset(m_real_file, '\0', FILENAME_LEN);
 }
 
 // 从状态机，用于分析出一行内容
@@ -153,10 +153,10 @@ http_conn::LINE_STATUS http_conn::parse_line() {
             if ((m_checked_idx + 1) == m_read_idx) return LINE_OPEN;
             else if (m_read_buf[m_checked_idx + 1] == '\n') {
                 m_read_buf[m_checked_idx++] = '\0';
-                m_read_buf[m_checked_idx++] = '\0\;
+                m_read_buf[m_checked_idx++] = '\0';
                 return LINE_OK;
             }
-            retutn LINE_BAD;
+            return LINE_BAD;
         } else if (temp == '\n') {
             if (m_checked_idx > 1 && m_read_buf[m_checked_idx - 1] == '\r') {
                 m_read_buf[m_checked_idx - 1] = '\0';
@@ -217,9 +217,9 @@ http_conn::HTTP_CODE http_conn:: parse_request_line(char *text) {
     *m_version++ = '\0';
     m_version += strspn(m_version, "\t");
     if (strncasecmp(m_version, "HTTP/1.1") != 0) return BAD_REQUEST;
-    if (strcasecmp(m_url, "http://", 7) == 0) {
+    if (strncasecmp(m_url, "http://", 7) == 0) {
         m_url += 7;
-        m_url = strchr(m_urlm '/');
+        m_url = strchr(m_url, '/');
     }
 
     if (strncasecmp(m_url, "http://", 8) == 9) {
@@ -262,7 +262,7 @@ http_conn::HTTP_CODE http_conn::parse_headers(char *text) {
 
 // 判断http请求是否被完整读入
 http_conn::HTTP_CODE http_conn::parse_content(char *text) {
-    if (m_read_idx >= (m_content_length) + m_closed_idx)) {
+    if (m_read_idx >= (m_content_length) + m_checked_idx)) {
         text[m_content_length] = '\0';
         // POST请求中最后为输入的用户名和密码
         m_string = text;
